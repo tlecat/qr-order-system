@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สั่งอาหาร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --primary:#E8521A;
+    --primary-light:#FDF1EC;
+    --primary-mid:#F9D0BE;
+    --surface:#FFFFFF;
+    --bg:#F7F4F0;
+    --text:#1C1410;
+    --muted:#8C7B70;
+    --border:#EAE4DC;
+    --radius:14px;
+    --radius-sm:8px;
+  }
+  body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  .header{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:16px 20px 14px;
+    position:sticky;top:0;z-index:100;
+  }
+  .header-inner{max-width:500px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .header-icon{
+    width:40px;height:40px;border-radius:10px;
+    background:var(--primary);display:flex;align-items:center;justify-content:center;
+    font-size:20px;flex-shrink:0;
+  }
+  .header h1{font-size:17px;font-weight:700;color:var(--text)}
+  .header p{font-size:12px;color:var(--muted);margin-top:1px}
+
+  .content{max-width:500px;margin:0 auto;padding:20px 16px 120px}
+
+  .section-label{
+    font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--muted);margin:24px 0 10px;
+  }
+  .section-label:first-child{margin-top:4px}
+
+  .menu-item{
+    background:var(--surface);border-radius:var(--radius);
+    border:1px solid var(--border);
+    padding:14px 16px;margin-bottom:8px;
+    display:flex;align-items:center;gap:14px;
+    transition:border-color .15s;
+  }
+  .menu-item:hover{border-color:var(--primary-mid)}
+  .menu-item.has-qty{border-color:var(--primary);background:var(--primary-light)}
+
+  .item-emoji{font-size:30px;width:44px;text-align:center;flex-shrink:0;line-height:1}
+  .item-info{flex:1;min-width:0}
+  .item-name{font-size:15px;font-weight:600;color:var(--text)}
+  .item-desc{font-size:12px;color:var(--muted);margin-top:2px}
+  .item-price{
+    font-size:13px;font-weight:700;color:var(--primary);
+    margin-top:4px;display:inline-block;
+  }
+
+  .qty-control{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .qty-btn{
+    width:32px;height:32px;border-radius:50%;border:none;
+    font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .1s;
+  }
+  .qty-btn:active{transform:scale(0.9)}
+  .qty-btn.minus{background:var(--border);color:var(--muted)}
+  .qty-btn.plus{background:var(--primary);color:#fff}
+  .qty-num{font-size:15px;font-weight:700;min-width:22px;text-align:center;color:var(--text)}
+
+  /* Cart bar */
+  .cart-bar{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    display:none;
+    padding:12px 16px 20px;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+  }
+  .cart-bar.show{display:block}
+  .cart-inner{
+    max-width:500px;margin:0 auto;
+    background:var(--primary);border-radius:var(--radius);
+    padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;
+  }
+  .cart-left{color:#fff}
+  .cart-count{font-size:12px;opacity:.85}
+  .cart-total{font-size:20px;font-weight:700;line-height:1.1}
+  .cart-cta{
+    background:#fff;color:var(--primary);
+    border:none;border-radius:var(--radius-sm);
+    padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;
+    font-family:inherit;white-space:nowrap;
+  }
+
+  /* Modal overlay */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:300;
+    display:flex;
+    align-items:flex-end;justify-content:center;
+    pointer-events:none;
+    backdrop-filter:blur(0px);
+    -webkit-backdrop-filter:blur(0px);
+    background:rgba(20,12,6,0);
+    transition:background .3s ease, backdrop-filter .3s ease;
+  }
+  .modal-overlay.show{
+    pointer-events:auto;
+    background:rgba(20,12,6,.5);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+  }
+  .modal{
+    background:var(--surface);
+    border-radius:22px 22px 0 0;
+    padding:24px 20px 32px;
+    width:100%;max-width:500px;
+    max-height:85vh;overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform .4s cubic-bezier(0.34,1.56,0.64,1);
+    will-change:transform;
+    touch-action:none;
+    user-select:none;
+  }
+  .modal-overlay.show .modal{
+    transform:translateY(0);
+  }
+  .modal-overlay.closing .modal{
+    transform:translateY(100%);
+    transition:transform .25s cubic-bezier(0.4,0,1,1);
+  }
+  .modal-overlay.closing{
+    background:rgba(20,12,6,0);
+    backdrop-filter:blur(0px);
+    -webkit-backdrop-filter:blur(0px);
+    transition:background .25s ease, backdrop-filter .25s ease;
+  }
+  .modal-handle{
+    width:36px;height:4px;border-radius:2px;background:var(--border);
+    margin:0 auto 20px;cursor:grab;
+  }
+  .modal-handle:active{cursor:grabbing}
+  .modal h2{font-size:18px;font-weight:700;margin-bottom:16px}
+
+  .modal-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;
+  }
+  .modal-row:last-of-type{border-bottom:none}
+  .modal-row-name{color:var(--text)}
+  .modal-row-price{font-weight:600}
+
+  .modal-total{
+    display:flex;justify-content:space-between;
+    padding:14px 0 4px;font-size:16px;font-weight:700;
+    border-top:2px solid var(--border);margin-top:4px;
+  }
+
+  .notes-wrap{margin:14px 0}
+  .notes-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block}
+  .notes-input{
+    width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 12px;font-size:14px;font-family:inherit;resize:none;
+    background:var(--bg);color:var(--text);
+    transition:border-color .15s;
+  }
+  .notes-input:focus{outline:none;border-color:var(--primary)}
+
+  .confirm-btn{
+    width:100%;background:var(--primary);color:#fff;
+    border:none;border-radius:var(--radius);
+    padding:15px;font-size:16px;font-weight:700;cursor:pointer;
+    font-family:inherit;margin-top:12px;
+    transition:opacity .15s;
+  }
+  .confirm-btn:disabled{opacity:.45;cursor:not-allowed}
+
+  /* Success */
+  .success{
+    text-align:center;padding:60px 24px;
+  }
+  .success-ring{
+    width:80px;height:80px;border-radius:50%;
+    background:var(--primary-light);border:2px solid var(--primary-mid);
+    display:flex;align-items:center;justify-content:center;
+    font-size:36px;margin:0 auto 20px;
+  }
+  .success h2{font-size:22px;font-weight:700;margin-bottom:8px}
+  .success p{font-size:14px;color:var(--muted);line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-icon">🍽️</div>
+    <div>
+      <h1>สั่งอาหาร</h1>
+      <p id="table-label">กำลังโหลด...</p>
+    </div>
+  </div>
+</div>
+
+<div class="content" id="menu-section">
+  <div class="section-label">อาหารจานหลัก</div>
+
+  <div class="menu-item" data-id="001" data-name="ข้าวผัดกะเพรา" data-price="80">
+    <div class="item-emoji">🍳</div>
+    <div class="item-info">
+      <div class="item-name">ข้าวผัดกะเพรา</div>
+      <div class="item-desc">ไก่/หมู พร้อมไข่ดาว</div>
+      <div class="item-price">฿80</div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn minus" onclick="changeQty(this,-1)">−</button>
+      <span class="qty-num">0</span>
+      <button class="qty-btn plus" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="menu-item" data-id="002" data-name="ผัดไทย" data-price="90">
+    <div class="item-emoji">🍜</div>
+    <div class="item-info">
+      <div class="item-name">ผัดไทย</div>
+      <div class="item-desc">กุ้ง/เต้าหู้ พร้อมเครื่องปรุง</div>
+      <div class="item-price">฿90</div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn minus" onclick="changeQty(this,-1)">−</button>
+      <span class="qty-num">0</span>
+      <button class="qty-btn plus" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="menu-item" data-id="003" data-name="ต้มยำกุ้ง" data-price="120">
+    <div class="item-emoji">🍲</div>
+    <div class="item-info">
+      <div class="item-name">ต้มยำกุ้ง</div>
+      <div class="item-desc">กุ้งสด น้ำใส/น้ำข้น</div>
+      <div class="item-price">฿120</div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn minus" onclick="changeQty(this,-1)">−</button>
+      <span class="qty-num">0</span>
+      <button class="qty-btn plus" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="section-label">เครื่องดื่ม</div>
+
+  <div class="menu-item" data-id="d001" data-name="น้ำเปล่า" data-price="15">
+    <div class="item-emoji">💧</div>
+    <div class="item-info">
+      <div class="item-name">น้ำเปล่า</div>
+      <div class="item-price">฿15</div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn minus" onclick="changeQty(this,-1)">−</button>
+      <span class="qty-num">0</span>
+      <button class="qty-btn plus" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="menu-item" data-id="d002" data-name="ชาไทย" data-price="35">
+    <div class="item-emoji">🧋</div>
+    <div class="item-info">
+      <div class="item-name">ชาไทย</div>
+      <div class="item-desc">เย็น/ร้อน</div>
+      <div class="item-price">฿35</div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn minus" onclick="changeQty(this,-1)">−</button>
+      <span class="qty-num">0</span>
+      <button class="qty-btn plus" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Bar -->
+<div class="cart-bar" id="cart-bar">
+  <div class="cart-inner" onclick="openModal()">
+    <div class="cart-left">
+      <div class="cart-count" id="cart-count">0 รายการ</div>
+      <div class="cart-total" id="cart-total">฿0</div>
+    </div>
+    <button class="cart-cta">ดูตะกร้า →</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>ตรวจสอบออเดอร์</h2>
+    <div id="modal-items"></div>
+    <div class="modal-total">
+      <span>รวมทั้งหมด</span>
+      <span id="modal-total-price">฿0</span>
+    </div>
+    <div class="notes-wrap">
+      <span class="notes-label">หมายเหตุ</span>
+      <textarea class="notes-input" id="notes" rows="2" placeholder="เช่น ไม่เผ็ด, ไม่ใส่ผัก..."></textarea>
+    </div>
+    <button class="confirm-btn" id="confirm-btn" onclick="submitOrder()">สั่งอาหาร</button>
+  </div>
+</div>
+
+<script>
+  const API='http://localhost:5000';
+  const params=new URLSearchParams(window.location.search);
+  const table=params.get('table')||'T1';
+  document.getElementById('table-label').textContent='โต๊ะ '+table;
+  let cart={};
+
+  function changeQty(btn,delta){
+    const item=btn.closest('.menu-item');
+    const qtyEl=item.querySelector('.qty-num');
+    const id=item.dataset.id,name=item.dataset.name,price=parseFloat(item.dataset.price);
+    let qty=parseInt(qtyEl.textContent)+delta;
+    if(qty<0)qty=0;
+    qtyEl.textContent=qty;
+    if(qty===0){delete cart[id];item.classList.remove('has-qty');}
+    else{cart[id]={item_id:id,name,quantity:qty,price};item.classList.add('has-qty');}
+    updateCartBar();
+  }
+
+  function updateCartBar(){
+    const items=Object.values(cart);
+    const total=items.reduce((s,i)=>s+i.quantity*i.price,0);
+    const count=items.reduce((s,i)=>s+i.quantity,0);
+    document.getElementById('cart-count').textContent=count+' รายการ';
+    document.getElementById('cart-total').textContent='฿'+total;
+    document.getElementById('cart-bar').classList.toggle('show',count>0);
+  }
+
+  function openModal(){
+    const items=Object.values(cart);
+    const total=items.reduce((s,i)=>s+i.quantity*i.price,0);
+    let html='';
+    items.forEach(i=>{html+=`<div class="modal-row"><span class="modal-row-name">${i.name} ×${i.quantity}</span><span class="modal-row-price">฿${i.quantity*i.price}</span></div>`;});
+    document.getElementById('modal-items').innerHTML=html;
+    document.getElementById('modal-total-price').textContent='฿'+total;
+    const overlay=document.getElementById('modal-overlay');
+    overlay.classList.remove('closing');
+    overlay.classList.add('show');
+  }
+
+  function closeModal(){
+    const overlay=document.getElementById('modal-overlay');
+    overlay.classList.add('closing');
+    setTimeout(()=>{overlay.classList.remove('show','closing');},260);
+  }
+
+  function closeModalBg(e){
+    if(e.target===document.getElementById('modal-overlay'))closeModal();
+  }
+
+  /* Swipe-down to dismiss */
+  (function(){
+    const modal=document.querySelector('.modal');
+    const handle=document.querySelector('.modal-handle');
+    let startY=0,currentY=0,dragging=false;
+
+    function onStart(e){
+      const touch=e.touches?e.touches[0]:e;
+      startY=touch.clientY;currentY=0;dragging=true;
+      modal.style.transition='none';
+    }
+    function onMove(e){
+      if(!dragging)return;
+      const touch=e.touches?e.touches[0]:e;
+      currentY=Math.max(0,touch.clientY-startY);
+      modal.style.transform=`translateY(${currentY}px)`;
+      const overlay=document.getElementById('modal-overlay');
+      const pct=Math.min(currentY/300,1);
+      overlay.style.background=`rgba(20,12,6,${0.5*(1-pct)})`;
+      overlay.style.backdropFilter=`blur(${6*(1-pct)}px)`;
+      if(e.cancelable)e.preventDefault();
+    }
+    function onEnd(){
+      if(!dragging)return;
+      dragging=false;
+      modal.style.transition='';
+      modal.style.transform='';
+      document.getElementById('modal-overlay').style.background='';
+      document.getElementById('modal-overlay').style.backdropFilter='';
+      if(currentY>120)closeModal();
+    }
+
+    handle.addEventListener('touchstart',onStart,{passive:true});
+    handle.addEventListener('touchmove',onMove,{passive:false});
+    handle.addEventListener('touchend',onEnd);
+    handle.addEventListener('mousedown',onStart);
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('mouseup',onEnd);
+  })();
+
+  async function submitOrder(){
+    const btn=document.getElementById('confirm-btn');
+    btn.disabled=true;btn.textContent='กำลังส่ง...';
+    const notes=document.getElementById('notes').value;
+    try{
+      const res=await fetch(API+'/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({table_number:table,items:Object.values(cart),notes})});
+      if(res.ok){
+        closeModal();
+        document.getElementById('menu-section').innerHTML=`<div class="success"><div class="success-ring">✅</div><h2>ส่งออเดอร์แล้ว!</h2><p>กรุณารอสักครู่<br>ทางร้านกำลังเตรียมอาหารให้คุณ</p></div>`;
+        document.getElementById('cart-bar').classList.remove('show');
+      }else{alert('เกิดข้อผิดพลาด กรุณาลองใหม่');btn.disabled=false;btn.textContent='สั่งอาหาร';}
+    }catch(e){alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');btn.disabled=false;btn.textContent='สั่งอาหาร';}
+  }
+</script>
+</body>
+</html>

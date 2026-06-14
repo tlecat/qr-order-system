@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --primary:#E8521A;
+    --primary-light:#FDF1EC;
+    --primary-mid:#F9D0BE;
+    --surface:#FFFFFF;
+    --bg:#F7F4F0;
+    --text:#1C1410;
+    --muted:#8C7B70;
+    --border:#EAE4DC;
+    --radius:14px;
+    --radius-sm:8px;
+  }
+  body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* Login */
+  .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+  .login-card{
+    background:var(--surface);border-radius:20px;
+    border:1px solid var(--border);
+    padding:32px 28px;width:100%;max-width:360px;
+  }
+  .login-logo{
+    width:52px;height:52px;border-radius:14px;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+    margin:0 auto 20px;
+  }
+  .login-card h1{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
+  .login-card .sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+  .field{margin-bottom:14px}
+  .field label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:.03em}
+  .field input{
+    width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:11px 14px;font-size:14px;font-family:inherit;background:var(--bg);
+    color:var(--text);transition:border-color .15s;
+  }
+  .field input:focus{outline:none;border-color:var(--primary)}
+  .login-btn{
+    width:100%;background:var(--primary);color:#fff;border:none;
+    border-radius:var(--radius);padding:13px;font-size:15px;font-weight:700;
+    cursor:pointer;margin-top:6px;font-family:inherit;transition:opacity .15s;
+  }
+  .login-btn:hover{opacity:.9}
+  .error-msg{color:#C0341C;font-size:13px;margin-top:10px;text-align:center}
+
+  /* Dashboard */
+  .dash{display:none}
+  .dash.show{display:block}
+
+  .topbar{
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:13px 20px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;
+  }
+  .topbar-left{display:flex;align-items:center;gap:10px}
+  .topbar-icon{
+    width:34px;height:34px;border-radius:9px;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  .topbar h1{font-size:17px;font-weight:700}
+  .logout-btn{
+    background:var(--bg);border:1px solid var(--border);
+    color:var(--muted);border-radius:var(--radius-sm);
+    padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;
+    transition:border-color .15s;
+  }
+  .logout-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+  .content{padding:16px;max-width:960px;margin:0 auto}
+
+  /* Summary */
+  .summary-bar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+  @media(min-width:500px){.summary-bar{grid-template-columns:repeat(4,1fr)}}
+  .summary-card{
+    background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);
+    padding:14px 16px;
+  }
+  .summary-num{font-size:24px;font-weight:700;color:var(--primary);line-height:1}
+  .summary-label{font-size:11px;color:var(--muted);margin-top:4px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:20px;padding:7px 16px;font-size:13px;font-weight:600;
+    cursor:pointer;white-space:nowrap;color:var(--muted);
+    transition:all .15s;font-family:inherit;
+  }
+  .tab:hover{border-color:var(--primary-mid);color:var(--text)}
+  .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+  /* Cards */
+  .orders-grid{display:grid;gap:10px}
+  .order-card{
+    background:var(--surface);border-radius:var(--radius);
+    border:1px solid var(--border);border-left:4px solid var(--border);
+    padding:16px;transition:box-shadow .15s;
+  }
+  .order-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .order-card.pending{border-left-color:#F59E0B}
+  .order-card.preparing{border-left-color:#3B82F6}
+  .order-card.ready{border-left-color:#10B981}
+  .order-card.served{border-left-color:#8B5CF6}
+  .order-card.paid{border-left-color:#9CA3AF}
+  .order-card.cancelled{border-left-color:#EF4444}
+
+  .order-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+  .order-table-num{font-size:19px;font-weight:700}
+  .order-time{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .badge.pending{background:#FEF3C7;color:#92400E}
+  .badge.preparing{background:#DBEAFE;color:#1E40AF}
+  .badge.ready{background:#D1FAE5;color:#065F46}
+  .badge.served{background:#EDE9FE;color:#5B21B6}
+  .badge.paid{background:#F3F4F6;color:#6B7280}
+  .badge.cancelled{background:#FEE2E2;color:#991B1B}
+
+  .order-items{font-size:13px;color:var(--muted);margin-bottom:8px;line-height:1.8}
+  .order-notes{font-size:12px;color:var(--primary);margin-bottom:8px;display:flex;align-items:baseline;gap:4px}
+  .order-total{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--text)}
+
+  .action-btns{display:flex;gap:7px;flex-wrap:wrap}
+  .action-btn{
+    border:none;border-radius:var(--radius-sm);padding:7px 14px;
+    font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+    transition:opacity .15s;
+  }
+  .action-btn:hover{opacity:.8}
+  .action-btn.preparing{background:#DBEAFE;color:#1E40AF}
+  .action-btn.ready{background:#D1FAE5;color:#065F46}
+  .action-btn.served{background:#EDE9FE;color:#5B21B6}
+  .action-btn.paid{background:#F3F4F6;color:#374151}
+  .action-btn.cancelled{background:#FEE2E2;color:#991B1B}
+
+  .refresh-btn{
+    position:fixed;bottom:24px;right:20px;
+    background:var(--primary);color:#fff;border:none;
+    border-radius:50%;width:50px;height:50px;font-size:20px;
+    cursor:pointer;box-shadow:0 4px 14px rgba(232,82,26,.4);
+    transition:transform .15s;display:flex;align-items:center;justify-content:center;
+  }
+  .refresh-btn:hover{transform:rotate(30deg)}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:15px}
+  .empty-icon{font-size:40px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-screen" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">🍽️</div>
+    <h1>Staff Login</h1>
+    <p class="sub">เข้าสู่ระบบเพื่อจัดการออเดอร์</p>
+    <div class="field">
+      <label>ชื่อผู้ใช้</label>
+      <input type="text" id="username" value="admin" placeholder="admin">
+    </div>
+    <div class="field">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="password" value="admin1234" placeholder="••••••••">
+    </div>
+    <button class="login-btn" onclick="login()">เข้าสู่ระบบ</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dash" id="dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">🍽️</div>
+      <h1>Dashboard</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+  </div>
+  <div class="content">
+    <div class="summary-bar" id="summary-bar"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="setFilter('all',this)">ทั้งหมด</button>
+      <button class="tab" onclick="setFilter('pending',this)">รอดำเนินการ</button>
+      <button class="tab" onclick="setFilter('preparing',this)">กำลังทำ</button>
+      <button class="tab" onclick="setFilter('ready',this)">พร้อมเสิร์ฟ</button>
+      <button class="tab" onclick="setFilter('served',this)">เสิร์ฟแล้ว</button>
+      <button class="tab" onclick="setFilter('paid',this)">ชำระแล้ว</button>
+    </div>
+    <div class="orders-grid" id="orders-grid"></div>
+  </div>
+  <button class="refresh-btn" onclick="loadOrders()" title="รีเฟรช">↻</button>
+</div>
+
+<script>
+  const API='http://localhost:5000';
+  let token=localStorage.getItem('token')||'';
+  let currentFilter='all';
+  let allOrders=[];
+
+  const STATUS_TH={pending:'รอดำเนินการ',preparing:'กำลังทำ',ready:'พร้อมเสิร์ฟ',served:'เสิร์ฟแล้ว',paid:'ชำระแล้ว',cancelled:'ยกเลิก'};
+  const NEXT_ACTIONS={
+    pending:[{s:'preparing',label:'เริ่มทำ'},{s:'cancelled',label:'ยกเลิก'}],
+    preparing:[{s:'ready',label:'พร้อมเสิร์ฟ'},{s:'cancelled',label:'ยกเลิก'}],
+    ready:[{s:'served',label:'เสิร์ฟแล้ว'}],
+    served:[{s:'paid',label:'ชำระแล้ว'}],
+    paid:[],cancelled:[]
+  };
+
+  if(token)showDash();
+
+  async function login(){
+    const u=document.getElementById('username').value;
+    const p=document.getElementById('password').value;
+    try{
+      const res=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+      const data=await res.json();
+      if(res.ok){token=data.access_token;localStorage.setItem('token',token);showDash();}
+      else{document.getElementById('login-error').textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';}
+    }catch(e){document.getElementById('login-error').textContent='เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';}
+  }
+
+  function logout(){
+    token='';localStorage.removeItem('token');
+    document.getElementById('dashboard').classList.remove('show');
+    document.getElementById('login-wrap').style.display='flex';
+  }
+
+  function showDash(){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('dashboard').classList.add('show');
+    loadOrders();
+    setInterval(loadOrders,30000);
+  }
+
+  async function loadOrders(){
+    try{
+      const res=await fetch(API+'/api/orders',{headers:{'Authorization':'Bearer '+token}});
+      if(res.status===401){logout();return;}
+      allOrders=await res.json();
+      renderOrders();renderSummary();
+    }catch(e){}
+  }
+
+  function renderSummary(){
+    const counts={};let revenue=0;
+    allOrders.forEach(o=>{counts[o.status]=(counts[o.status]||0)+1;if(o.status==='paid')revenue+=o.total_amount;});
+    document.getElementById('summary-bar').innerHTML=`
+      <div class="summary-card"><div class="summary-num">${allOrders.length}</div><div class="summary-label">ออเดอร์ทั้งหมด</div></div>
+      <div class="summary-card"><div class="summary-num">${counts.pending||0}</div><div class="summary-label">รอดำเนินการ</div></div>
+      <div class="summary-card"><div class="summary-num">${counts.preparing||0}</div><div class="summary-label">กำลังทำ</div></div>
+      <div class="summary-card"><div class="summary-num">฿${revenue}</div><div class="summary-label">รายได้วันนี้</div></div>`;
+  }
+
+  function renderOrders(){
+    const filtered=currentFilter==='all'?allOrders:allOrders.filter(o=>o.status===currentFilter);
+    if(!filtered.length){
+      document.getElementById('orders-grid').innerHTML='<div class="empty"><div class="empty-icon">🍽️</div>ไม่มีออเดอร์</div>';
+      return;
+    }
+    document.getElementById('orders-grid').innerHTML=filtered.map(o=>{
+      const time=new Date(o.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+      const items=o.items.map(i=>`${i.name} ×${i.quantity}`).join(', ');
+      const actions=(NEXT_ACTIONS[o.status]||[]).map(a=>`<button class="action-btn ${a.s}" onclick="updateStatus('${o.order_id}','${a.s}')">${a.label}</button>`).join('');
+      return `<div class="order-card ${o.status}">
+        <div class="order-header">
+          <div><div class="order-table-num">โต๊ะ ${o.table_number}</div><div class="order-time">${time}</div></div>
+          <span class="badge ${o.status}">${STATUS_TH[o.status]}</span>
+        </div>
+        <div class="order-items">${items}</div>
+        ${o.notes?`<div class="order-notes">📝 ${o.notes}</div>`:''}
+        <div class="order-total">฿${o.total_amount}</div>
+        <div class="action-btns">${actions}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function updateStatus(id,status){
+    try{
+      await fetch(`${API}/api/orders/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({status})});
+      loadOrders();
+    }catch(e){}
+  }
+
+  function setFilter(f,el){
+    currentFilter=f;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    renderOrders();
+  }
+</script>
+</body>
+</html>
